@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="utf-8">
+    <title>Simplex Tests</title>
+    <link rel="stylesheet" href="lib/qunit.css" />
+</head>
+<body>
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+
+<!-- Test View Templates -->
+<script id="bindId" type="text/template">
+    <label sx-id="user"></label>
+</script>
+<script id="bindRegion" type="text/template">
+    <div sx-region="subView"></div>
+</script>
+<script id="bindValue" type="text/template">
+    <label sx-value="userName" sx-id="label"></label>
+    <input sx-value="userName" sx-id="input" type="text" />
+</script>
+<script id="bindAttribute" type="text/template">
+    <label sx-class="className" sx-id="label"></label>
+</script>
+<script id="bindHtmlEvent" type="text/template">
+    <button type="button"
+            sx-id="button"
+            sx-onclick="viewClick"
+            sx-onmouseover="viewEnter">Event Test</button>
+</script>
+<script id="bindSource" type="text/template">
+    <label sx-value="user.name" sx-id="label"></label>
+</script>
+<script id="bindSourceModelValue" type="text/template">
+    <label sx-value="user.name" sx-id="label"></label>
+    <input sx-value="user.name" sx-id="input" type="text" />
+</script>
+<script id="bindSourceModelAttribute" type="text/template">
+    <label sx-class="user.class" sx-id="label"></label>
+</script>
+<script id="bindItemsArray" type="text/template">
+    <ul sx-items="users" sx-id="ul">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>
+<script id="bindItemsCollection" type="text/template">
+    <ul sx-items="users" sx-id="ul">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>
+<script id="bindItemsCollectionWithEvent" type="text/template">
+    <ul  sx-items="users" sx-id="ul">
+        <li sx-value="item.name" sx-onclick="clickHandler"></li>
+    </ul>
+</script>
+<script id="ViewItemsCollectionUpdate" type="text/template">
+    <ul  sx-items="users" sx-id="ul">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>
+<script id="bindRegionWithView" type="text/template">
+    <div sx-region="subView"></div>
+</script>
+<script id="bindRegionSubView" type="text/template">
+    <span>Hello World!</span>
+</script>
+<script id="bindItemsArrayWithSort" type="text/template">
+    <ul sx-items="users" sx-id="ul" sx-items-options="usersOptions">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>
+<script id="bindItemsArrayWithFilter" type="text/template">
+    <ul sx-items="users" sx-id="ul" sx-items-options="usersOptions">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>
+<script id="bindItemsCollectionWithOptions" type="text/template">
+    <ul sx-items="users" sx-id="ul" sx-items-options="usersOptions">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>
+<script id="bindItemsCollectionWithModelOptions" type="text/template">
+    <ul sx-items="users" sx-id="ul" sx-items-options="usersOptions">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>
+
+<!-- Required Scripts -->
+<script src="lib/jquery.min.js" type="text/javascript"></script>
+<script src="lib/lodash.min.js" type="text/javascript"></script>
+<script src="/simplex.js" type="text/javascript"></script>
+
+<!-- QUnit Scripts -->
+<script src="lib/qunit.js"></script>
+
+<!-- Test Scripts -->
+<script src="view.js"></script>
+<script src="command.js"></script>
+<script src="commands.js"></script>
+<script src="model.js"></script>
+<script src="collection.js"></script>
+<script src="events.js"></script>
+<script src="type.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "Simplex.js",
+  "description": "",
+  "license": "MIT",
+  "keywords": [],
+  "author": "Richard Heath <richardheath39@gmail.com> (http://richardheath.me/)",
+  "version": "0.0.1",
+  "main": "dist/simplex.js",
+  "scripts": {
+    "test": "node tests/app.js",
+    "build": "gulp build"
+  },
+  "dependencies": {
+    "lodash": "^2.3.1"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.6",
+    "gulp-concat": "^2.4.1",
+    "gulp-uglify": "^0.3.1"
+  }
+}

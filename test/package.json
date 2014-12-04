@@ -1,0 +1,11 @@
+{
+  "name": "SimplexTester",
+  "private": true,
+  "license": "MIT",
+  "author": "Richard Heath <richardheath39@gmail.com> (http://richardheath.me/)",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "^4.10.4",
+    "body-parser": "^1.9.3"
+  }
+}
