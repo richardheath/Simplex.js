@@ -16,13 +16,26 @@ http://richardheath.me
 
 ## Events
 
-A simplified events system that does not handle DOM events.
+Simplified events module that handles attaching and triggering events. Target is an optional field. If target is
+not specified then target will be the current object. eventName can be a string for single event or an array of
+strings for multiple events.
 
-### Properties
+### - when ([target], eventName, callback, [context])
 
-#### Target
+Bind an event to a callback function.
 
-Target is an optional field. If target is not specified then target will be the current object.
+```
+car.when('doorOpened', openLights);
+car.when(remoteStart, 'startPressed', startEngine);
+```
+
+### - once  ([target], eventName, callback, [context])
+
+Bind an event that will only be triggered once
+
+### - stopListening ([target], [eventName], [callback], [context])
+
+### - trigger (eventName)
 
 ## Model
 
