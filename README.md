@@ -35,9 +35,28 @@ Bind an event that will only be triggered once
 
 ### - stopListening ([target], [eventName], [callback], [context])
 
-### - trigger (eventName)
+Unbinds callbacks to target object. The parameters serves as filters. If no parameters are supplied then all callbacks are removed.
+
+```
+car.stopListening(remoteStart, 'lockClicked'); // stop listening to one event
+car.stopListening(remoteStart); // stop listening to one event
+car.stopListening(); // remove all callbacks
+```
+
+### - trigger (eventName, [*args])
+
+Trigger one or many events.
+
+```
+car.trigger('doorOpened'); // Single event
+car.trigger(['doorOpened', 'startPressed']); // Multiple events
+```
 
 ## Model
+
+Encapsulate the main logic surrounding the model it represents. It handles validation, conversions, properties etc.
+It also uses types to easily reuse type options (like validation, conversions, and options).
+Models are also responsible on communicating data with server through the use of commands.
 
 ## Collection
 
