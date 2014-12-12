@@ -58,6 +58,58 @@ Encapsulate the main logic surrounding the model it represents. It handles valid
 It also uses types to easily reuse type options (like validation, conversions, and options).
 Models are also responsible on communicating data with server through the use of commands.
 
+The key values of a model are direct property of the object model. This makes it possible to read property directly
+from the object. Just watch out of inherited properties when using the dot notation ('car.color').
+Using get will ensure that it only retrieves own properties.
+
+```
+var car = New Car({
+    color: 'red'
+});
+
+// Return both red
+car.color;
+car.get('color');
+```
+
+### Special Properties
+
+Model properties that must be specified when extending a model. These will be inherited on objects derived from model.
+
+#### - fields
+
+Specify a Simplex type for model fields. Non Simplex type will be treated as a default value.
+
+```
+var intType = Simplex.Type.extend({
+    default: 0,
+    validation: {
+        isInt: function(val) {
+            if(_.isNumber(val) === false) {
+                return 'Invalid number.';
+            }
+        }
+    }
+});
+
+var Car = Simplex.Model.extend({
+    fields: {
+        horsePower: intType,
+        color: 'red'
+    }
+});
+
+var car = new Car();
+car.horsePower; // 0
+car.color; // red
+```
+
+#### - commands
+
+
+
+### - get
+
 ## Collection
 
 ## Views
