@@ -280,7 +280,7 @@
         target._attachedTo[source._sid] = source;
     }
 
-    var Model = Simplex.Model = function(attributes, options) {
+    var Model = Simplex.Model = function(attributes) {
         attributes ||  (attributes = {});
 
         // Apply default values
@@ -301,7 +301,7 @@
         }
 
         this._sid = _.uniqueId('s');
-        this.set(attributes, options);
+        this.set(attributes, { silent: true });
         this.initialize.apply(this, arguments);
     };
     // Attach all inheritable methods to the Model prototype.
@@ -399,7 +399,7 @@
             }
 
             for(cmd in commands) {
-                modelCmd = this.commands[cmd];
+                modelCmd = this.commands[cmd]; // TODO: Use Parent
                 data = { data: this.toObject() };
                 modelCmd.command.run(_.assign(data, _.assign( modelCmd, commands[cmd] )));
             }
@@ -410,7 +410,7 @@
         toObject: function() {
             var key, obj = {};
             for(key in this) {
-                if(!this.hasOwnProperty(key) || key.charAt(0) === '_') {
+                if(!this.hasOwnProperty(key) || key === '_sid') {
                     continue;
                 }
 
