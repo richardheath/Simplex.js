@@ -65,11 +65,15 @@ var getCarSpecs = new Simplex.Command({
     }
 });
 
-var Car = new Simplex.Model({
-    getSpecs: getCarSpecs,
-    map: {},
-    success: function() { console.log('Specs'); },
-    error: function() { console.log('Failed'); }
+var Car = Simplex.Model.extend({
+    commands: {
+        sync: {
+            command: getCarSpecs,
+            map: {},
+            success: function() { console.log('Specs'); },
+            error: function() { console.log('Failed'); }
+        }
+    }
 });
 
 var impala = new Car({
@@ -77,7 +81,7 @@ var impala = new Car({
     model: 'Chevy'
 });
 
-impala.run('getSpecs');
+impala.run('sync');
 ```
 
 ## - get(attr)
@@ -195,11 +199,15 @@ var getCarSpecs = new Simplex.Command({
     }
 });
 
-var Car = new Simplex.Model({
-    getSpecs: getCarSpecs,
-    map: {},
-    success: function() { console.log('Specs'); },
-    error: function() { console.log('Failed'); }
+var Car = Simplex.Model.extend({
+    commands: {
+        sync: {
+            command: getCarSpecs,
+            map: {},
+            success: function() { console.log('Specs'); },
+            error: function() { console.log('Failed'); }
+        }
+    }
 });
 
 var impala = new Car({
@@ -207,5 +215,5 @@ var impala = new Car({
     model: 'Chevy'
 });
 
-impala.run('getSpecs');
+impala.run('sync');
 ```
