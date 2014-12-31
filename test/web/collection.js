@@ -37,6 +37,43 @@
         equal(item.number, 2);
     });
 
+    test('set silent', function() {
+        var col = new Simplex.Collection(dataSet1, {
+            uniqueId: 'id'
+        });
+        var triggered = 0;
+
+        col.when('change', function() {
+            triggered += 1;
+        });
+
+        equal(col.length, 6);
+
+        // First is not silent to test the event is being triggered
+        col.set([
+            { id: 7, note: 'seven', message: 'yay', number: 1 }
+        ]);
+
+        equal(triggered, 1);
+        equal(col.length, 7);
+
+        // This should update the models
+        col.set(dataSet1, true);
+        equal(triggered, 1);
+        equal(col.length, 7);
+
+        // Update model
+        col.set([
+            { id: 7, note: 'seven', message: 'wow', number: 2 }
+        ], true);
+        equal(triggered, 1);
+        equal(col.length, 7);
+
+        var item = col.get(7);
+        equal(item.message, 'wow');
+        equal(item.number, 2);
+    });
+
     test('remove', function() {
         var col = new Simplex.Collection(dataSet1, {
             uniqueId: 'id'
@@ -56,6 +93,38 @@
         // Remove by model
         var model = col.get(5);
         res = col.remove(model);
+        equal(res.length, 1);
+        equal(res[0].id, 5);
+    });
+
+    test('remove silent', function() {
+        var col = new Simplex.Collection(dataSet1, {
+            uniqueId: 'id'
+        });
+
+        var triggered = 0;
+
+        col.when('change', function() {
+            triggered += 1;
+        });
+
+        // Remove 1 item
+        var res = col.remove(3);
+        equal(triggered, 1);
+        equal(res.length, 1);
+        equal(res[0].id, 3);
+
+        // Remove array of models
+        res = col.remove([1, 2], true);
+        equal(triggered, 1);
+        equal(res.length, 2);
+        equal(res[0].id, 1);
+        equal(res[1].id, 2);
+
+        // Remove by model
+        var model = col.get(5);
+        res = col.remove(model, true);
+        equal(triggered, 1);
         equal(res.length, 1);
         equal(res[0].id, 5);
     });
@@ -83,6 +152,25 @@
         equal(col.length, 6);
         col.clear();
         equal(col.length, 0);
+    });
+
+    test('clear silent', function() {
+        var col = new Simplex.Collection(dataSet1, {
+            uniqueId: 'id'
+        });
+        var triggered = 0;
+
+        col.when('change', function() {
+            triggered += 1;
+        });
+
+        equal(col.length, 6);
+        // Trigger change
+        col.clear();
+        equal(triggered, 1);
+        // Silent
+        col.clear(true);
+        equal(triggered, 1);
     });
 
     test('at', function() {
