@@ -32,18 +32,18 @@ var users = [
 ];
 
 var commands = {
-    getUser: function (params) {
+    getUser: function (params, callback) {
         if(params.id > users.length || params.id < 0) {
             return {
                 error: 'user does not exist.'
             };
         }
 
-        return users[params.id];
+        callback(users[params.id]);
     },
-    addUser: function (params) {
+    addUser: function (params, callback) {
         users.push(params);
-        return { success: true };
+        callback( { success: true } );
     }
 };
 

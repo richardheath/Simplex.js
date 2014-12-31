@@ -322,7 +322,7 @@
 
             return _.escape(this[attr]);
         },
-        set: function(key, val, options) {
+        set: function(key, val, silent) {
             if(key == null) {
                 return this;
             }
@@ -332,7 +332,7 @@
             // set attrs based on parameters
             if (typeof key === 'object') {
                 attrs = key;
-                options = val;
+                silent = val;
             } else {
                 (attrs = {})[key] = val;
             }
@@ -341,7 +341,7 @@
                 this[attr] = attrs[attr];
             }
 
-            if(!(options && options.silent === true)) {
+            if(silent !== true) {
                 this.trigger('update');
                 this._triggerCollection('change');
             }
@@ -350,21 +350,21 @@
         has: function(attr) {
             return this[attr] != null;
         },
-        unset: function(attr, options) {
+        unset: function(attr, silent) {
             // Only unset attributes that exists and non-inherited
             if(!this[attr] || !this.hasOwnProperty(attr)) {
                 return;
             }
 
             delete this[attr];
-            if(!(options && options.silent === true)) {
+            if(silent !== true) {
                 this.trigger('update');
                 this._triggerCollection('change');
             }
 
             return this;
         },
-        clear: function(options) {
+        clear: function(silent) {
             var attr;
 
             for (attr in this) {
@@ -375,7 +375,7 @@
                 delete this[attr];
             }
 
-            if(!(options && options.silent === true)) {
+            if(silent !== true) {
                 this.trigger('update');
                 this._triggerCollection('change');
             }
@@ -410,7 +410,7 @@
         toObject: function() {
             var key, obj = {};
             for(key in this) {
-                if(!this.hasOwnProperty(key) || key === '_sid') {
+                if(!this.hasOwnProperty(key) || key === '_sid' || key === '_events') {
                     continue;
                 }
 
@@ -458,13 +458,11 @@
     _.assign(Collection.prototype, Events);
     _.assign(Collection.prototype, {
         initialize: function() {},
-        set: function(models, options) {
+        set: function(models, silent) {
             if(!models) { return; }
 
             var col = this,
                 uniqueId = this.uniqueId;
-
-            options || (options = {});
 
             if(_.isArray(models)) {
                 _.forEach(models, function(model) {
@@ -494,18 +492,16 @@
                 return 0;
             });
 
-            if(options.silent !== true) {
+            if(silent !== true) {
                 this.trigger('change');
             }
         },
-        remove: function(models, options) {
+        remove: function(models, silent) {
             if(!models) {
                 models = this.models;
                 this.clear();
                 return models;
             }
-
-            options || (options = {});
 
             var removed = [], col = this;
             if(_.isArray(models)) {
@@ -517,15 +513,19 @@
                 removed.push(col._removeItem(models));
             }
 
-            if(options.silent === false) {
+            if(silent !== true) {
                 this.trigger('change');
             }
 
             return removed;
         },
-        clear: function() {
+        clear: function(silent) {
             this.length = 0;
             this.models = [];
+
+            if(silent !== true) {
+                this.trigger('change');
+            }
         },
         get: function(id) {
             var low = 0, high = this.length - 1,

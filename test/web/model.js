@@ -41,6 +41,27 @@
         equal(obj.has('message'), true);
     });
 
+    test('set silent', function() {
+        var obj = new Simplex.Model({ message: 'hello' });
+        var triggered = 0;
+
+        obj.when('update', function() {
+            triggered += 1;
+        });
+
+        obj.set('reply', 'hi', true);
+        equal(triggered, 0);
+
+        obj.set({
+            reply: 'Yo',
+            message: 'Hey'
+        }, true);
+        equal(triggered, 0);
+
+        equal(obj.get('message'), 'Hey');
+        equal(obj.has('message'), true);
+    });
+
     test('get', function() {
         var obj = new Simplex.Model({ message: 'hello' });
         obj.counter = 0;
@@ -119,6 +140,31 @@
         ok(obj.triggered === undefined);
     });
 
+    test('unset and clear silent', function() {
+        var obj = new Simplex.Model({
+            field1: 1,
+            field2: 2,
+            field3: 3,
+            field4: 4
+        });
+        var triggered = 0;
+
+        obj.when('update', function() {
+            triggered += 1;
+        });
+
+        obj.unset('field1', true);
+        equal(triggered, 0);
+        obj.unset('field2', true);
+        equal(triggered, 0);
+        equal(obj.has('field1'), false);
+
+        obj.clear();
+        ok(obj.field3 === undefined);
+        ok(obj.field4 === undefined);
+        equal(triggered, 0);
+    });
+
     test('raw and escaped', function() {
         var obj = new Simplex.Model({ message: '<span>Hello</span>' });
 
@@ -146,11 +192,11 @@
     });
 
     test('toObject and toJSON', function() {
-        var obj = new Simplex.Model({ name: 'Simplex', _system: 'System value' });
+        var obj = new Simplex.Model({ name: 'Simplex' });
 
         var res = obj.toObject();
         equal(res.name, 'Simplex');
-        ok(res._system === undefined);
+        ok(res._sid === undefined);
         res = obj.toJSON();
         equal(res, '{"name":"Simplex"}');
     });
