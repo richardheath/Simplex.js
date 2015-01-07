@@ -194,8 +194,13 @@
         // - Should return id 2 to 5
         equal(res[0].id, 2);
         equal(res[3].id, 5);
-
-
+        // - to max
+        res = col.select([3]);
+        equal(res.length, 3);
+        // - overflow will default to max
+        res = col.select([3, 999]);
+        equal(res.length, 3);
+        
         // Select by object filter
         // - filter by message hi
         res = col.select({ message: 'hi'});

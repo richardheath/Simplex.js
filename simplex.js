@@ -1,6 +1,8 @@
 // Simplex 0.0.1
 
 (function(){
+    'use strict';
+
     // Save reference to global object
     var root = this;
 
@@ -576,7 +578,9 @@
 
             if(_.isArray(filter)) {
                 // Filter by range
-                if(filter[1] === 'max' || filter[1] > result.length -1) {
+                if(filter.length === 1) {
+                    filter.push(result.length - 1);
+                } else if(filter[1] > result.length -1) {
                     filter[1] = result.length - 1;
                 }
 
@@ -584,7 +588,7 @@
             } else if(_.isObject(filter)) {
                 return _.where(result, filter);
             } else if(_.isFunction(filter)) {
-                return _.where(result, filter);
+                return _.filter(result, filter);
             } else if(_.isUndefined(filter) || filter === '*') {
                 // Return all items if filter is undefined or null
                 return result;
