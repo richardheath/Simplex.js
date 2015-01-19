@@ -21,6 +21,7 @@
     var array = [],
         slice = array.slice,
         regxSimplexPrefix = /^sx-/,
+        regxSimplexPrefixEvent = /^ev-/,
         trim = function (val) {
             return val.replace(/^\s+|\s+$/g, '');
         };
@@ -311,6 +312,7 @@
     _.assign(Model.prototype, {
         initialize: function() {},
         get: function(attr) {
+            //TODO: Add a check to only return own fields
             if(this.fields && this.fields[attr]) {
                 var field = this.fields[attr];
                 if(field.parse) {
@@ -340,7 +342,9 @@
             }
 
             for (attr in attrs) {
-                this[attr] = attrs[attr];
+                if(attrs.hasOwnProperty(attr)) {
+                    this[attr] = attrs[attr];
+                }
             }
 
             if(silent !== true) {
@@ -350,7 +354,7 @@
             return this;
         },
         has: function(attr) {
-            return this[attr] != null;
+            return this.hasOwnProperty(attr) && this[attr] != null;
         },
         unset: function(attr, silent) {
             // Only unset attributes that exists and non-inherited
@@ -436,8 +440,6 @@
     });
 
     var Collection = Simplex.Collection = function(models, options) {
-        console.log(_.isObject(models));
-        console.log(models);
         if(models && _.isArray(models) === false) {
             options = models;
             models = null;
@@ -659,11 +661,7 @@
         this._sid = _.uniqueId('s');
         options || (options = {});
         _.assign(this, options);
-        // Used to save initial options. Used for item views to inherit parent options
-        this._options = options;
 
-        // Set defaults
-        //this.retainState || (this.retainState = false);
         this.initialize.apply(this, arguments);
     };
     _.assign(View.prototype, Events);
@@ -712,12 +710,14 @@
             var template = $el.html();
             $el.html('');
 
-            var inheritedParentViewOption = _.assign(view._options, {
+            var inheritedParentViewOption = {
                 parent: view,
                 template: template
-            });
+            };
 
-            var ItemView = Simplex.View.extend(inheritedParentViewOption);
+            // Use view option if provided
+            var ItemView = options && options.View ? options.View.extend(inheritedParentViewOption)
+                : Simplex.View.extend(inheritedParentViewOption);
 
             // Now sort and filter before rendering
             if(items instanceof Simplex.Collection) {
@@ -854,9 +854,9 @@
                             break;
                         case 'items-options': break;
                         default:
-                            if(isHtmlEvent(attr)) {
+                            if(regxSimplexPrefixEvent.test(attr)) {
                                 // Set DOM event
-                                $el.on(attr.substr(2), domEventWrapper(view, value));
+                                $el.on(attr.substr(3), domEventWrapper(view, value));
                             } else {
                                 if(_.isFunction(value)) {
                                     value = value.call(view);
