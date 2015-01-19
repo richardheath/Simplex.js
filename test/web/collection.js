@@ -10,6 +10,14 @@
         { id: 6, note: 'six', message: 'aha', number: 1 }
     ];
 
+    test('constructor', function() {
+        var col = new Simplex.Collection({
+            uniqueId: 'id'
+        });
+
+        equal(col.uniqueId, 'id', 'models is optional');
+    });
+
     test('set', function() {
         var col = new Simplex.Collection(dataSet1, {
             uniqueId: 'id'
