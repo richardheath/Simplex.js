@@ -26,8 +26,8 @@
 <script id="bindHtmlEvent" type="text/template">
     <button type="button"
             sx-id="button"
-            sx-onclick="viewClick"
-            sx-onmouseover="viewEnter">Event Test</button>
+            sx-ev-click="viewClick"
+            sx-ev-mouseover="viewEnter">Event Test</button>
 </script>
 <script id="bindSource" type="text/template">
     <label sx-value="user.name" sx-id="label"></label>
@@ -51,7 +51,7 @@
 </script>
 <script id="bindItemsCollectionWithEvent" type="text/template">
     <ul  sx-items="users" sx-id="ul">
-        <li sx-value="item.name" sx-onclick="clickHandler"></li>
+        <li sx-value="item.name" sx-ev-click="parent.clickHandler"></li>
     </ul>
 </script>
 <script id="ViewItemsCollectionUpdate" type="text/template">
@@ -80,12 +80,21 @@
         <li sx-value="item.name"></li>
     </ul>
 </script>
+<script id="bindItemsCollectionWithOptionsView" type="text/template">
+    <ul sx-items="users" sx-id="ul" sx-items-options="options">
+        <li sx-style="css" sx-value="item.name"></li>
+    </ul>
+</script>
 <script id="bindItemsCollectionWithModelOptions" type="text/template">
     <ul sx-items="users" sx-id="ul" sx-items-options="usersOptions">
         <li sx-value="item.name"></li>
     </ul>
 </script>
-
+<script id="viewContructor" type="text/template">
+    <ul sx-items="users" sx-region="ul">
+        <li sx-value="item.name"></li>
+    </ul>
+</script>.
 <!-- Required Scripts -->
 <script src="lib/jquery.min.js" type="text/javascript"></script>
 <script src="lib/lodash.min.js" type="text/javascript"></script>

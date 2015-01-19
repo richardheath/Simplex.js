@@ -29,6 +29,7 @@
         var obj = new Simplex.Model({ message: 'hello' });
         obj.counter = 0;
 
+        console.log(obj.toObject());
         obj.set('reply', 'hi');
         equal(obj.get('reply'), 'hi');
 

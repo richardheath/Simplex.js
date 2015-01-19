@@ -212,10 +212,6 @@
         equal(span.html(), 'Hello World!');
     });
 
-    test('bind???', function() {
-        ok(true);
-    });
-
     test('Events triggered', function() {
         var lastEvent = '';
 
@@ -354,5 +350,51 @@
         options.set('filter', { name: 'Richard' });
         equal(view.ul.find(':eq(0)').html(), 'Richard');
         equal(view.ul.find('li').length, 1);
+    });
+
+    test('Bind items: collection with view option', function() {
+        var items = new Simplex.Collection([
+            { name: 'Richard' }
+        ]);
+        var itemView = Simplex.View.extend({
+            css: 'color: rgb(0, 0, 255)'
+        });
+
+        var view = new Simplex.View({
+            template: $('#bindItemsCollectionWithOptionsView').html(),
+            css: 'color: rgb(255, 0, 0)', //Should not use this becuase its from parent
+            users: items,
+            options: {
+                View: itemView
+            }
+        });
+
+        region.show(view);
+        equal(view.ul.find(':eq(0)').html(), 'Richard');
+        equal(view.ul.find(':eq(0)').css('color'), 'rgb(0, 0, 255)');
+        region.close();
+    });
+
+    test('constructor', function() {
+        // Items do not inherit parent view directly. Should be in item.parent.
+        var items = new Simplex.Collection([
+            { name: 'Richard' },
+            { name: 'Jona' },
+            { name: 'Rihnoja' }
+        ]);
+
+        var view = new Simplex.View({
+            template: $('#viewContructor').html(),
+            users: items,
+            parentFn: function() {
+
+            }
+        });
+
+        region.show(view);
+        var itemView = view.ul.views[0];
+        ok(itemView.parentFn === undefined);
+        ok(itemView.parent === view);
+        ok(itemView.item);
     });
 })();
