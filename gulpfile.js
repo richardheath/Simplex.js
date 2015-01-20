@@ -1,15 +1,25 @@
 var gulp = require('gulp');
 var concat = require('gulp-concat');
+var uglify = require('gulp-uglify');
 
 gulp.task('build', function() {
-    gulp.src(['src/lib/jquery.min.js', 'src/lib/lodash.min.js', 'src/simplex.js'])
+    // Unminified
+    gulp.src(['simplex.js'])
+        .pipe(concat('simplex.js'))
+        .pipe(gulp.dest('dist/'));
+
+    // Minified
+    gulp.src(['simplex.js'])
+        .pipe(concat('simplex.min.js'))
+        .pipe(uglify())
+        .pipe(gulp.dest('dist/'));
+
+    // Bundled and minified
+    gulp.src(['test/lib/jquery.min.js', 'test/lib/lodash.min.js', 'dist/simplex.min.js'])
         .pipe(concat('simplex.bundle.js'))
         .pipe(gulp.dest('dist/'));
 
-    gulp.src(['src/simplex.js'])
-        .pipe(concat('simplex.js'))
-        // TODO: Uglify
-        .pipe(gulp.dest('dist/'));
+
 });
 
-gulp.task('default', ['build-script'], function() {});
+gulp.task('default', ['build'], function() {});
