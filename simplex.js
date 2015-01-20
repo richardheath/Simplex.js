@@ -1,5 +1,3 @@
-// Simplex 0.0.1
-
 (function(){
     'use strict';
 
@@ -16,7 +14,7 @@
     }
 
     // Current Version
-    Simplex.version = '0.0.1';
+    Simplex.version = '0.0.3';
 
     var array = [],
         slice = array.slice,

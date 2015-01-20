@@ -1,16 +1,35 @@
-// Simplex 0.0.1
-
 (function(){
-    // Save reference to window
-    var root = this;
-    var array = [];
-    var slice = array.slice;
-    var trim = $.trim;
+    'use strict';
 
-    var regxSimplexPrefix = /^sx-/;
+    // Save reference to global object
+    var root = this;
 
     // The top-level namespace
-    var Simplex = root.Simplex = {};
+    var Simplex;
+
+    if(typeof exports !== 'undefined') {
+        Simplex = exports;
+    } else {
+        Simplex = root.Simplex = {};
+    }
+
+    // Current Version
+    Simplex.version = '0.0.3';
+
+    var array = [],
+        slice = array.slice,
+        regxSimplexPrefix = /^sx-/,
+        regxSimplexPrefixEvent = /^ev-/,
+        trim = function (val) {
+            return val.replace(/^\s+|\s+$/g, '');
+        };
+
+    // Require lodash on server or if it's not already present.
+    var _ = root._;
+
+    if (typeof require !== 'undefined' && !_) {
+        _ = require('lodash');
+    }
 
     var Events = Simplex.Events = {
         // Bind an event to a callback function.
@@ -262,7 +281,7 @@
         target._attachedTo[source._sid] = source;
     }
 
-    var Model = Simplex.Model = function(attributes, options) {
+    var Model = Simplex.Model = function(attributes) {
         attributes ||  (attributes = {});
 
         // Apply default values
@@ -283,7 +302,7 @@
         }
 
         this._sid = _.uniqueId('s');
-        this.set(attributes, options);
+        this.set(attributes, { silent: true });
         this.initialize.apply(this, arguments);
     };
     // Attach all inheritable methods to the Model prototype.
@@ -291,6 +310,7 @@
     _.assign(Model.prototype, {
         initialize: function() {},
         get: function(attr) {
+            //TODO: Add a check to only return own fields
             if(this.fields && this.fields[attr]) {
                 var field = this.fields[attr];
                 if(field.parse) {
@@ -304,7 +324,7 @@
 
             return _.escape(this[attr]);
         },
-        set: function(key, val, options) {
+        set: function(key, val, silent) {
             if(key == null) {
                 return this;
             }
@@ -314,65 +334,54 @@
             // set attrs based on parameters
             if (typeof key === 'object') {
                 attrs = key;
-                options = val;
+                silent = val;
             } else {
                 (attrs = {})[key] = val;
             }
 
-            if(options && options.silent === true) {
-                for (attr in attrs) {
+            for (attr in attrs) {
+                if(attrs.hasOwnProperty(attr)) {
                     this[attr] = attrs[attr];
                 }
             }
-            else {
-                for (attr in attrs) {
-                    this[attr] = attrs[attr];
-                    this.trigger('change:' + attr);
-                }
-                this.trigger('change');
+
+            if(silent !== true) {
+                this.trigger('update');
                 this._triggerCollection('change');
             }
             return this;
         },
         has: function(attr) {
-            return this[attr] != null;
+            return this.hasOwnProperty(attr) && this[attr] != null;
         },
-        unset: function(attr, options) {
+        unset: function(attr, silent) {
             // Only unset attributes that exists and non-inherited
             if(!this[attr] || !this.hasOwnProperty(attr)) {
                 return;
             }
 
             delete this[attr];
-            if(!options || options.silent !== true) {
-                this.trigger('change:' + attr);
-                this.trigger('change');
+            if(silent !== true) {
+                this.trigger('update');
                 this._triggerCollection('change');
             }
 
             return this;
         },
-        clear: function(options) {
+        clear: function(silent) {
             var attr;
-            if(!options || options.silent !== true) {
-                for (attr in this) {
-                    if(!this.hasOwnProperty(attr)) {
-                        continue;
-                    }
 
-                    delete this[attr];
-                    this.trigger('change:' + attr);
+            for (attr in this) {
+                if(!this.hasOwnProperty(attr)) {
+                    continue;
                 }
-                this.trigger('change:');
+
+                delete this[attr];
+            }
+
+            if(silent !== true) {
+                this.trigger('update');
                 this._triggerCollection('change');
-            } else {
-                for (attr in this) {
-                    if(!this.hasOwnProperty(attr)) {
-                        continue;
-                    }
-
-                    delete this[attr];
-                }
             }
 
             return this;
@@ -394,13 +403,10 @@
             }
 
             for(cmd in commands) {
-                modelCmd = this.commands[cmd];
+                modelCmd = this.commands[cmd]; // TODO: Use Parent
                 data = { data: this.toObject() };
                 modelCmd.command.run(_.assign(data, _.assign( modelCmd, commands[cmd] )));
             }
-        },
-        clone: function() {
-
         },
         toJSON: function () {
             return JSON.stringify(this.toObject());
@@ -408,7 +414,7 @@
         toObject: function() {
             var key, obj = {};
             for(key in this) {
-                if(!this.hasOwnProperty(key) || key.charAt(0) === '_') {
+                if(!this.hasOwnProperty(key) || key === '_sid' || key === '_events') {
                     continue;
                 }
 
@@ -432,6 +438,11 @@
     });
 
     var Collection = Simplex.Collection = function(models, options) {
+        if(models && _.isArray(models) === false) {
+            options = models;
+            models = null;
+        }
+
         options || (options = {});
         this.Model = options.Model ? options.Model : Model;
         this.uniqueId = options.uniqueId || '_sid';
@@ -449,9 +460,11 @@
     _.assign(Collection.prototype, Events);
     _.assign(Collection.prototype, {
         initialize: function() {},
-        set: function(models, options) {
-            var col = this;
-            options || (options = {});
+        set: function(models, silent) {
+            if(!models) { return; }
+
+            var col = this,
+                uniqueId = this.uniqueId;
 
             if(_.isArray(models)) {
                 _.forEach(models, function(model) {
@@ -471,7 +484,6 @@
             }
 
             // Sort the models by uniqueId
-            var uniqueId = this.uniqueId;
             this.models.sort(function(a, b) {
                 if(a[uniqueId] > b[uniqueId]) {
                     return 1;
@@ -482,18 +494,16 @@
                 return 0;
             });
 
-            if(options.silent === false) {
+            if(silent !== true) {
                 this.trigger('change');
             }
         },
-        remove: function(models, options) {
+        remove: function(models, silent) {
             if(!models) {
                 models = this.models;
                 this.clear();
                 return models;
             }
-
-            options || (options = {});
 
             var removed = [], col = this;
             if(_.isArray(models)) {
@@ -505,15 +515,19 @@
                 removed.push(col._removeItem(models));
             }
 
-            if(options.silent === false) {
+            if(silent !== true) {
                 this.trigger('change');
             }
 
             return removed;
         },
-        clear: function() {
+        clear: function(silent) {
             this.length = 0;
             this.models = [];
+
+            if(silent !== true) {
+                this.trigger('change');
+            }
         },
         get: function(id) {
             var low = 0, high = this.length - 1,
@@ -564,7 +578,9 @@
 
             if(_.isArray(filter)) {
                 // Filter by range
-                if(filter[1] === 'max' || filter[1] > result.length -1) {
+                if(filter.length === 1) {
+                    filter.push(result.length - 1);
+                } else if(filter[1] > result.length -1) {
                     filter[1] = result.length - 1;
                 }
 
@@ -572,7 +588,7 @@
             } else if(_.isObject(filter)) {
                 return _.where(result, filter);
             } else if(_.isFunction(filter)) {
-                return _.where(result, filter);
+                return _.filter(result, filter);
             } else if(_.isUndefined(filter) || filter === '*') {
                 // Return all items if filter is undefined or null
                 return result;
@@ -597,6 +613,13 @@
             }
         },
         _addItem: function(model) {
+            var item = this.get(model[this.uniqueId]);
+            if(item) {
+                item.clear();
+                item.set(model.toObject());
+                return;
+            }
+
             model.collection = this;
             this.models.push(model);
             this.length += 1;
@@ -636,11 +659,7 @@
         this._sid = _.uniqueId('s');
         options || (options = {});
         _.assign(this, options);
-        // Used to save initial options. Used for item views to inherit parent options
-        this._options = options;
 
-        // Set defaults
-        //this.retainState || (this.retainState = false);
         this.initialize.apply(this, arguments);
     };
     _.assign(View.prototype, Events);
@@ -650,48 +669,77 @@
             return this.$el.find(selector);
         },
         renderToRegion: function(region) {
-            var view = this;
-
-            if(view.template.charAt(0) === '#') {
-                view.template = $(view.template).html();
+            if(this.template.charAt(0) === '#') {
+                this.template = region.$(this.template).html();
             }
 
-            view.$el = region.$el;
-            view.$el.html(view.template);
+            this.trigger('onShow', this);
+            if(this.onShow) {
+                this.onShow();
+            }
 
-            view._processDataBindings();
+            this.region = region;
+            this.$el = region.$el;
+            this.$el.html(this.template);
+
+            this._processDataBindings();
+
+            this.trigger('showed', this);
+            if(this.showed) {
+                this.showed();
+            }
         },
         renderViewItems: function($el, items) {
-            var view = this,
-                region = new Simplex.Region( {el: $el} );
+            var view = this, region;
+            // Check if sx-region is defined on template
+            if(!!$el.attr('sx-region')) {
+                var regionName = $el.attr('sx-region');
+
+                if(!view[regionName]) {
+                    view[regionName] = new Simplex.Region($el, view.region.$);
+                }
+                region = view[regionName];
+            } else {
+                region = new Simplex.Region($el, view.region.$);
+            }
+
+            var options = view._getSortOrFilterParam($el.attr('sx-items-options'));
 
             var template = $el.html();
             $el.html('');
 
-            var inheritedParentViewOption = _.assign(view._options, {
-                    parent: view,
-                    template: template
-                });
+            var inheritedParentViewOption = {
+                parent: view,
+                template: template
+            };
 
-            var ItemView = view.constructor.extend(inheritedParentViewOption);
+            // Use view option if provided
+            var ItemView = options && options.View ? options.View.extend(inheritedParentViewOption)
+                : Simplex.View.extend(inheritedParentViewOption);
 
+            // Now sort and filter before rendering
             if(items instanceof Simplex.Collection) {
-                items.forEach(function (item) {
-                    var itemView = new ItemView({ source: { item: item } });
-                    region.append(itemView);
-                });
+                bindViewCollectionChange(view, region, items, ItemView, options);
             }
             else {
-                _.forEach(items, function (item) {
-                    var itemView = new ItemView({ source: { item: item } });
-                    region.append(itemView);
-                });
+                bindViewArrayChange(view, region, items, ItemView, options);
             }
         },
         appendToRegion: function(region) {
-            this.$el = $(this.template);
+            this.trigger('onShow', this);
+            if(this.onShow) {
+                this.onShow();
+            }
+
+            this.region = region;
+            this.$el = region.$(this.template);
             region.$el.append(this.$el);
             this._processDataBindings(true);
+
+            this.trigger('showed', this);
+            if(this.showed) {
+                this.showed();
+            }
         },
         _processDataBindings: function() {
             var view = this;
@@ -701,45 +749,91 @@
             elWithData = elWithData.not(view.$el.find('[sx-items] *'));
 
             _.forEach(elWithData, function(el) {
-                var attr, i, len = el.attributes.length,
-                    $el = $(el),
-                    source, value, key;
+                var attr, attrCtr, source, value, key, split, splitCtr, splitLen,
+                    attrLen = el.attributes.length,
+                    $el = view.region.$(el);
 
-                for(i = 0; i < len; ++i) {
-                    if(!regxSimplexPrefix.test(el.attributes[i].name)) {
+                // TODO: Refactor the priority attr
+                if($el.attr('sx-id')) {
+                    value = $el.attr('sx-id');
+                    split = value.split('.');
+                    source = view;
+
+                    if(split.length === 1) {
+                        key = split[0];
+                    }
+                    else {
+                        splitLen = split.length - 1; // Skip last. Use as key
+
+                        for(splitCtr = 0; splitCtr < splitLen; splitCtr += 1) {
+                            source = source[split[splitCtr]];
+                        }
+
+                        key = split[splitLen];
+                    }
+
+                    source[key] = $el;
+                }
+                if($el.attr('sx-region')) {
+                    value = $el.attr('sx-region');
+                    split = value.split('.');
+                    source = view;
+
+                    if(split.length === 1) {
+                        key = split[0];
+                    }
+                    else {
+                        splitLen = split.length - 1; // Skip last. Use as key
+
+                        for(splitCtr = 0; splitCtr < splitLen; splitCtr += 1) {
+                            source = source[split[splitCtr]];
+                        }
+
+                        key = split[splitLen];
+                    }
+
+                    source[key] = new Simplex.Region($el, view.region.$);;
+                }
+
+                for(attrCtr = 0; attrCtr < attrLen; ++attrCtr) {
+                    if(!regxSimplexPrefix.test(el.attributes[attrCtr].name)) {
                         continue;
                     }
 
-                    attr = el.attributes[i].name.substr(3);
-                    value = el.attributes[i].value;
-                    source = value.split('.');
+                    attr = el.attributes[attrCtr].name.substr(3);
+                    value = el.attributes[attrCtr].value;
+                    split = value.split('.');
+                    source = view;
 
-                    if(source.length === 1) {
-                        key = source[0];
-                        // Set source to view if key exist.
-                        //  else use the view.source
-                        if(view[key]) {
-                            source = view;
-                        } else {
-                            source = view.source;
-                        }
+                    if(split.length === 1) {
+                        key = split[0];
                     }
                     else {
-                        key = source[1];
-                        source = view.source[source[0]];
+                        splitLen = split.length - 1; // Skip last. Use as key
+
+                        for(splitCtr = 0; splitCtr < splitLen; splitCtr += 1) {
+                            source = source[split[splitCtr]];
+                        }
+
+                        key = split[splitLen];
                     }
 
+                    // If priority attr then continue
+                    if(attr === 'id' || attr === 'region') {
+                        continue;
+                    }
+
+                    // Do nothing if source does not exist
+                    if(source === undefined) { continue; }
+                    // Get source value
+                    value = source instanceof Model ? source.get(key) : source[key];
+
                     switch (attr) {
-                        case 'id':
-                            view[value] = $el;
-                            break;
-                        case 'region':
-                            view[value] = new Simplex.Region({ el: $el });
-                            break;
-                        case 'bind':
-                            break;
                         case 'value':
-                            value = source instanceof Model ? source.get(key) : source[key];
+                            if(_.isFunction(value)) {
+                                value = value.call(view);
+                            }
+
                             if(el.nodeName === 'INPUT') {
                                 $el.val(value);
                                 if(source instanceof Model) {
@@ -754,20 +848,18 @@
                             }
                             break;
                         case 'items':
-                            value = source instanceof Model ? source.get(key) : source[key];
                             view.renderViewItems($el, value);
                             break;
+                        case 'items-options': break;
                         default:
-                            // Do nothing if it cannot be found on source when default
-                            if(source === undefined) {
-                                break;
-                            }
-
-                            value = source instanceof Model ? source.get(key) : source[key];
-                            if(isHtmlEvent(attr)) {
+                            if(regxSimplexPrefixEvent.test(attr)) {
                                 // Set DOM event
-                                $el.on(attr.substr(2), domEventWrapper(view, value));
+                                $el.on(attr.substr(3), domEventWrapper(view, value));
                             } else {
+                                if(_.isFunction(value)) {
+                                    value = value.call(view);
+                                }
+
                                 // Set element attribute
                                 $el.attr(attr, value);
                                 if(source instanceof Model) {
@@ -779,58 +871,167 @@
                 }
             });
         },
+        _getSortOrFilterParam: function(value) {
+            if(!value) {
+                return null;
+            }
+
+            if(value.substr(0, 5) === 'item.') {
+                return value.substr(5);
+            }
+
+            var key, splitLen, splitCtr,
+                source = this,
+                split = value.split('.');
+
+            if(split.length === 1) {
+                key = split[0];
+            }
+            else {
+                splitLen = split.length - 1; // Skip last. Use as key
+
+                for(splitCtr = 0; splitCtr < splitLen; splitCtr += 1) {
+                    source = source[split[splitCtr]];
+                }
+
+                key = split[splitLen];
+            }
+
+            // Return null if source or target value does not exist
+            if(!source || !source[key]) {
+                return null;
+            }
+
+            return source[key];
+        },
         _close: function() {
+            this.trigger('onClose', this);
+            if(this.onClose) {
+                this.onClose();
+            }
+
+            // TODO: view cleanup here
+
+            this.trigger('closed', this);
+            if(this.closed) {
+                this.closed();
+            }
+
             this.stopListening();
         }
     });
-    // TODO-nu: Now use collection to render items.
-    //  Also bind to collection change events.
 
+    function bindViewCollectionChange(view, region, collection, ItemView, options) {
+        renderCollectionItems(region, collection, ItemView, options);
+
+        if(options) {
+            view.when(options, 'update', function() {
+                renderCollectionItems(region, collection, ItemView, options);
+            });
+        }
+
+        view.when(collection, 'change', function() {
+            renderCollectionItems(region, collection, ItemView, options);
+        });
+    }
+    function bindViewArrayChange(view, region, items, ItemView, options) {
+        renderArrayItems(region, items, ItemView, options);
+
+        if(options) {
+            view.when(options, 'update', function() {
+                renderArrayItems(region, items, ItemView, options);
+            });
+        }
+    }
+    function renderCollectionItems(region, collection, ItemView, options) {
+        var items;
+
+        if(options) {
+            items = collection.select(options.filter, options.sort, options.dir);
+        } else {
+            items = collection.models;
+        }
+
+        region.$el.html('');
+
+        _.forEach(items, function (item) {
+            var itemView = new ItemView({ item: item });
+            region.append(itemView);
+        });
+    }
+    function renderArrayItems(region, items, ItemView, options) {
+        if(options) {
+            if(options.sort) {
+                items = _.sortBy(items, options.sort);
+            }
+
+            if(options.filter) {
+                items = _.where(items, options.filter);
+            }
+        }
+
+        region.$el.html('');
+
+        _.forEach(items, function (item) {
+            var itemView = new ItemView({ item: item });
+            region.append(itemView);
+        });
+    }
     function domEventWrapper(context, callback) {
         return function(jQueryEvent) {
             callback.call(context, jQueryEvent);
         };
     }
     function domBindWrapper_val(view, $el, model, key) {
-        view.when(model, 'change:' + key, function() {
+        view.when(model, 'update', function() {
             $el.val(model.get(key));
         });
     }
     function domBindWrapper_html(view, $el, model, key) {
-        view.when(model, 'change:' + key, function() {
+        view.when(model, 'update', function() {
             $el.html(model.get(key));
         });
     }
     function domBindWrapper_attr(view, $el, model, key, attr) {
-        view.when(model, 'change:' + key, function() {
+        view.when(model, 'update', function() {
             $el.attr(attr, model.get(key));
         });
     }
 
-    var Region = Simplex.Region = function(options) {
+    var Region = Simplex.Region = function(el, jQuery) {
         this._sid = _.uniqueId('s');
         this.views = [];
-
-        options || (options = {});
+        this.$ = jQuery || $; // Use var jQuery if supplied
 
         // Convert el string to jQuery else expect jQuery object
-        if(_.isString(options.el)) {
-            this.$el = $(options.el);
+        if(_.isString(el)) {
+            this.$el = this.$(el);
         } else {
-            this.$el = options.el;
+            this.$el = el;
         }
     };
     _.assign(Region.prototype, Events);
     _.assign(Region.prototype, {
         show: function(view) {
+            this.trigger('onShow', view);
+            if(this.onShow) {
+                this.onShow();
+            }
+
             view.renderToRegion(this);
             this.views.push(view);
 
-            if(view.onShow) {
-                view.onShow();
+            this.trigger('showed', view);
+            if(this.showed) {
+                this.showed();
             }
         },
         close: function(view) {
+            this.trigger('onClose');
+            if(this.onClose) {
+                this.onClose();
+            }
+
             if(view) {
                 if(_.isString(view)) {
                     view = this.get(view);
@@ -838,15 +1039,20 @@
 
                 view._close();
                 _.remove(this.views, function(item) { return item === view; });
+            } else {
+                var len = this.views.length;
+                while(len > 0) {
+                    len -= 1;
+                    this.views[len]._close();
+                }
+                this.$el.empty();
+                this.views = [];
             }
 
-            var len = this.views.length;
-            while(len > 0) {
-                len -= 1;
-                this.views[len]._close();
+            this.trigger('closed');
+            if(this.closed) {
+                this.closed();
             }
-            this.$el.empty();
-            this.views = [];
         },
         append: function(view) {
             view.appendToRegion(this);
@@ -932,12 +1138,12 @@
             // TODO: Check if there is a way to determine the limit
             // Determine if request can be safely made with GET else use POST
             /*if(jsonReq.length < 255) {
-                var temp = encodeURIComponent(jsonReq);
-                if(temp.length <= 255) {
-                    jsonReq = temp;
-                    reqType = 'GET';
-                }
-            }*/
+             var temp = encodeURIComponent(jsonReq);
+             if(temp.length <= 255) {
+             jsonReq = temp;
+             reqType = 'GET';
+             }
+             }*/
 
             $.ajax({
                 type: reqType,
@@ -988,7 +1194,7 @@
         },
         buildArguments: function (options) {
             if(!options || !options.data) {
-                return;
+                return {};
             }
 
             var args;
