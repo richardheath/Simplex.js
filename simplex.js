@@ -850,7 +850,7 @@
                         case 'items':
                             view.renderViewItems($el, value);
                             break;
-                        case 'items-options': break;
+                        case 'options': break;
                         default:
                             if(regxSimplexPrefixEvent.test(attr)) {
                                 // Set DOM event
@@ -1474,64 +1474,4 @@
         return extend.call(this, protoProps, staticProps);
     };
 
-    function isHtmlEvent(name) {
-        switch (name) {
-            case 'onkeydown':
-            case 'onkeypress':
-            case 'onkeyup':
-            // -- Form Events
-            case 'onblur':
-            case 'onchange':
-            case 'oncontextmenu':   // HTML5
-            case 'onfocus':
-            case 'onformchange':
-            case 'onforminput':
-            case 'oninput':
-            case 'oninvalid':
-            case 'onselect':
-            case 'onsubmit':
-            // -- Mouse Events
-            case 'onclick':
-            case 'ondblclick':
-            case 'ondrag':
-            case 'ondragend':
-            case 'ondragenter':
-            case 'ondragleave':
-            case 'ondragover':
-            case 'ondragstart':
-            case 'ondrop':
-            case 'onmousedown':
-            case 'onmousemove':
-            case 'onmouseout':
-            case 'onmouseover':
-            case 'onmousewheel':
-            case 'onscroll':
-            // Media Events
-            case 'onabort':
-            case 'oncanplay':
-            case 'oncanplaythrough':
-            case 'ondurationchange':
-            case 'onemptied':
-            case 'onended':
-            case 'onerror':
-            case 'onloadeddata':
-            case 'onloadedmetadata':
-            case 'onloadstart':
-            case 'onpause':
-            case 'onplay':
-            case 'onplaying':
-            case 'onprogress':
-            case 'onratechange':
-            case 'onreadystatechange':
-            case 'onseeked':
-            case 'onseeking':
-            case 'onstalled':
-            case 'onsuspend':
-            case 'ontimeupdate':
-            case 'onvolumechange':
-            case 'onwaiting':
-                return true;
-        }
-        return false;
-    }
 }).call(this);
